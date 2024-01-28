@@ -1,0 +1,57 @@
+{
+	"name": "moonrakers",
+	"version": "1.0.0",
+	"files": [
+		"dashboard",
+		"graphics",
+		"extension.js",
+		"extension"
+	],
+	"nodecg": {
+		"compatibleRange": "^1.8.1",
+		"dashboardPanels": [
+			{
+				"name": "contracts",
+				"title": "Contracts",
+				"width": 4,
+				"file": "contracts.html"
+			}
+		],
+		"graphics": [
+			{
+				"file": "index.html",
+				"width": 1920,
+				"height": 1080
+			}
+		]
+	},
+	"scripts": {
+		"start:NodeCG": "node ../../index.js --bundlesEnabled moonrakers",
+		"watch": "npm-run-all -p watch:*",
+		"watch:extension": "node ./node_modules/typescript/bin/tsc -p ./src/extension --diagnostics --watch",
+		"watch:dashboard": "node ./node_modules/typescript/bin/tsc -p ./src/dashboard --diagnostics --watch",
+		"watch:graphics": "node ./node_modules/typescript/bin/tsc -p ./src/graphics --diagnostics --watch",
+		"watch:copy": "onchange -i ./src -- npm-run-all -s build:copy*",
+		"build": "npm-run-all -s build:*",
+		"build:extension": "node ./node_modules/typescript/bin/tsc -p ./src/extension --diagnostics",
+		"build:dashboard": "node ./node_modules/typescript/bin/tsc -p ./src/dashboard --diagnostics",
+		"build:graphics": "node ./node_modules/typescript/bin/tsc -p ./src/graphics --diagnostics",
+		"build:copyhtml": "cpy \"src/**/*.html\" \"./\" --parents",
+		"build:copycss": "cpy \"src/**/*.css\" \"./\" --parents",
+		"build:copyjson": "cpy \"src/**/*.json\" \"./\" --parents",
+		"build:copydel": "del-cli dashboard/tsconfig.json && del-cli graphics/tsconfig.json && del-cli extension/tsconfig.json",
+		"build:copyassets": "cpy \"assets/**/*\" \"./dashboard/assets\" --parents && cpy \"assets/**/*\" \"./graphics/assets\" --parents"
+	},
+	"author": "Mark Schwartzkopf",
+	"license": "MIT",
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^5.33.1",
+		"@typescript-eslint/parser": "^5.33.1",
+		"cpy-cli": "^4.1.0",
+		"del-cli": "^5.1.0",
+		"eslint": "^8.22.0",
+		"npm-run-all": "^4.1.5",
+		"onchange": "^7.1.0",
+		"typescript": "^4.7.4"
+	}
+}

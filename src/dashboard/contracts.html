@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NodeCG Dashboard</title>
+    <link rel="shortcut icon" href="#" />
+    <style>
+      body,
+      html {
+        box-sizing: border-box;
+        height: auto;
+        margin: 0;
+      }
+      body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: min-content;
+        grid-template-rows: auto auto 1fr;
+      }
+      #contracts {
+        max-height: 20rem;
+        overflow-y: scroll;
+        width: 12rem;
+        overflow-x: hidden;
+        border: 1px solid white;
+        padding: 0.5rem;
+        margin: 1rem;
+        grid-row: 2 / span 2;
+      }
+      #search {
+        padding: 0.2rem;
+        border: 1px solid black;
+        margin: 0.5rem;
+      }
+      #card {
+        width: 12rem;
+        margin: 1rem;
+      }
+      #toggle {
+        margin: 1rem;
+      }
+      .hidden {
+        display: none;
+      }
+      .selected {
+        font-weight: bold;
+        border: 2px solid white;
+        padding: 0.1rem;
+        margin: 0.1rem 0 0.1rem 0;
+      }
+      .contract-div {
+        cursor: pointer;
+        width: min-content;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <input id="search" type="search" placeholder="Search..." style="grid-column: 1 / span 2;"/>
+    <div id="contracts"></div><img id="card"></div>
+    <button id="toggle">Toggle</button>
+  </body>
+  <script>
+    var exports = {};
+  </script>
+  <script src="contracts.js"></script>
+</html>
