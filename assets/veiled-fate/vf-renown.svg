@@ -227,7 +227,12 @@
 		<g class="marker" id="sorcerer-marker" fill="#ad8e62" transform="translate(256.29 0)" style="opacity: 0">
 			<g class="pointer">
 				<g transform="translate(-26.3 -113.4) scale(.37)" stroke="#e4ddce" stroke-width="5px">
-					<circle cx="70.5" cy="80.87" r="68"/>
+					<clipPath id="sorcerer-clip" clipPathUnits="objectBoundingBox">
+						<circle cx=".5" cy=".5" r=".47" />
+					</clipPath>
+					<circle cx="70.5" cy="80.87" r="68" />
+					<image clip-path="url(#sorcerer-clip)" width="145" x="-02" y="8" href="sorcerer-pointer.png" />
+					<circle cx="70.5" cy="80.87" r="68" fill="none" />
 					<polygon transform="translate(3.57 4) scale(1.08)" points="62.66 216.65 98.23 155.03 27.08 155.03 62.66 216.65" />
 				</g>
 			</g>
