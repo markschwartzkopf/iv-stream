@@ -1,5 +1,5 @@
 /// <reference path="../../../../types/browser.d.ts" />
-import { Contract } from '../extension/replicants'; //'./replicants';
+/* import { Contract } from '../extension/replicants'; //'./replicants';
 
 const contractsRep = nodecg.Replicant<Contract[]>('contracts');
 const selectedCard = nodecg.Replicant<string>('contractcard', {
@@ -95,3 +95,4 @@ function newContractDiv(contract: Contract, selectedContractTitle: string) {
   };
   return rtn;
 }
+ */

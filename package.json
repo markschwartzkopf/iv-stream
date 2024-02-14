@@ -1,5 +1,5 @@
 {
-	"name": "moonrakers",
+	"name": "iv-stream",
 	"version": "1.0.0",
 	"files": [
 		"dashboard",
@@ -11,10 +11,10 @@
 		"compatibleRange": "^1.8.1",
 		"dashboardPanels": [
 			{
-				"name": "contracts",
-				"title": "Contracts",
+				"name": "Main Dashboard",
+				"title": "Main Dashboard",
 				"width": 4,
-				"file": "contracts.html"
+				"file": "main.html"
 			}
 		],
 		"graphics": [
@@ -26,20 +26,19 @@
 		]
 	},
 	"scripts": {
-		"start:NodeCG": "node ../../index.js --bundlesEnabled moonrakers",
+		"start:NodeCG": "node ../../index.js --bundlesEnabled iv-stream",
 		"watch": "npm-run-all -p watch:*",
 		"watch:extension": "node ./node_modules/typescript/bin/tsc -p ./src/extension --diagnostics --watch",
 		"watch:dashboard": "node ./node_modules/typescript/bin/tsc -p ./src/dashboard --diagnostics --watch",
 		"watch:graphics": "node ./node_modules/typescript/bin/tsc -p ./src/graphics --diagnostics --watch",
-		"watch:copy": "onchange -i ./src -- npm-run-all -s build:copy*",
+		"watch:copysource": "onchange -i ./src -- npm-run-all -s build:copy*",
+		"watch:copyassets": "onchange -i ./assets -- npm run build:copyassets",
 		"build": "npm-run-all -s build:*",
 		"build:extension": "node ./node_modules/typescript/bin/tsc -p ./src/extension --diagnostics",
 		"build:dashboard": "node ./node_modules/typescript/bin/tsc -p ./src/dashboard --diagnostics",
 		"build:graphics": "node ./node_modules/typescript/bin/tsc -p ./src/graphics --diagnostics",
 		"build:copyhtml": "cpy \"src/**/*.html\" \"./\" --parents",
 		"build:copycss": "cpy \"src/**/*.css\" \"./\" --parents",
-		"build:copyjson": "cpy \"src/**/*.json\" \"./\" --parents",
-		"build:copydel": "del-cli dashboard/tsconfig.json && del-cli graphics/tsconfig.json && del-cli extension/tsconfig.json",
 		"build:copyassets": "cpy \"assets/**/*\" \"./dashboard/assets\" --parents && cpy \"assets/**/*\" \"./graphics/assets\" --parents"
 	},
 	"author": "Mark Schwartzkopf",

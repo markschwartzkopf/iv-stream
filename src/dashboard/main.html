@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Main Game Dashboard</title>
+		<link rel="shortcut icon" href="#" />
+		<style>
+			body,
+			html {
+				box-sizing: border-box;
+				height: auto;
+				margin: 0;
+			}
+			#game-selector {
+				margin: 1rem;
+				display: flex;
+				justify-content: space-evenly;
+				border: 1px solid white;
+			}
+			#array-holder {
+				display: flex;
+				flex-wrap: nowrap;
+			}
+			#array-holder > div {
+				border: 1px white solid;
+				margin: 1rem;
+				padding: 0.5rem;
+			}
+			#array-holder > div > div:nth-child(2) {
+				display: flex;
+				flex-wrap: wrap;
+				column-gap: 2em;
+				row-gap: 1em;
+			}
+			#array-holder > div > div:nth-child(2) > div {
+				display: flex;
+				align-items: center;
+				gap: 0.5em;
+			}
+			#array-holder > div > div:last-child {
+				display: flex;
+				justify-content: space-evenly;
+				padding-top: 1rem;
+			}
+			#array-holder > div > div:first-child {
+				font-weight: bold;
+				font-size: 1.5rem;
+				margin-bottom: 0.5rem;
+				cursor: default;
+				text-align: center;
+			}
+			th {
+				text-align: left;
+				cursor: default;
+			}
+			td,
+			th {
+				padding-right: 1rem;
+			}
+			button {
+				background-color: white;
+				border: 2px solid black;
+				cursor: pointer;
+				padding: 0.5em;
+				font-weight: bold;
+			}
+			.incDec {
+				display: flex;
+				border: 2px solid black;
+			}
+			.incDec > div {
+				padding: 0.6em 0.4em 0.6em 0.4em;
+				font-weight: bold;
+				background-color: gray;
+				cursor: pointer;
+			}
+			.incDec > div:nth-child(2) {
+				border-left: 1px solid black;
+				border-right: 1px solid black;
+				text-align: center;
+				flex-grow: 1;
+				color: black;
+				background-color: white;
+				cursor: default;
+			}
+			.changed {
+				color: orange;
+			}
+			img.changed {
+				opacity: 0.3;
+			}
+			.incDec > div:nth-child(2).changed {
+				background-color: yellow !important;
+				color: black;
+			}
+			#every-game-buttons {
+				display: flex;
+				justify-content: space-around;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="game-selector"></div>
+		<div id="array-holder"></div>
+		<div id="every-game-buttons">
+			<button id="reset">Reset Game</button>
+		</div>
+	</body>
+	<script>
+		var exports = {};
+	</script>
+	<script src="main.js"></script>
+</html>

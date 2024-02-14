@@ -4,5 +4,14 @@
   "editor.detectIndentation": false,
   "editor.tabSize": 2,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "eslint.validate": ["javascript", "typescript"]
+	"eslint.validate": [
+		"javascript",
+		"typescript"
+	],
+	"[xml]": {
+		"editor.defaultFormatter": "DotJoshJohnson.xml"
+	},
+	"[svg]": {
+		"editor.defaultFormatter": "jock.svg"
+	}
 }
