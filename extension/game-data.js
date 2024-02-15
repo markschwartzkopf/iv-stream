@@ -8,10 +8,10 @@ const gameDefs = {
     'Veiled Fate': {
         arrays: {
             /* Players: {
-                fields: { name: { type: 'string', unique: true } },
-                display: 'table',
-                min: 2,
-                max: 8,
+              fields: { name: { type: 'string', unique: true } },
+              display: 'table',
+              min: 2,
+              max: 8,
             }, */
             Demigods: {
                 fields: {
@@ -53,9 +53,7 @@ const gameDefs = {
                         type: 'image',
                         unique: true,
                         dashHeight: '4.3em',
-                        values: [
-                            { name: 'Hadria', url: 'assets/veiled-fate/hadria-marker.svg' },
-                        ],
+                        values: [{ name: 'Hadria', url: 'assets/veiled-fate/hadria-marker.svg' }],
                     },
                     renown: { type: 'VFRenown', hadria: true },
                 },
@@ -74,9 +72,7 @@ const activeGameRep = nodecg.Replicant('active-game');
 if (!activeGameRep.value || !gameDefs[activeGameRep.value])
     activeGameRep.value = Object.keys(gameDefs)[0];
 nodecg.listenFor('buttonPush', (arg) => {
-    if (arg.game === 'Veiled Fate' &&
-        arg.array === 'Demigods' &&
-        arg.button === 'smite') {
+    if (arg.game === 'Veiled Fate' && arg.array === 'Demigods' && arg.button === 'smite') {
         vfSmite(arg.index);
     }
 });
@@ -86,7 +82,10 @@ nodecg.listenFor('addArrayItem', (arg) => {
         gamesDataRep.value &&
         gamesDataRep.value[arg.game] &&
         gamesDataRep.value[arg.game][arg.array]) {
-        gamesDataRep.value[arg.game][arg.array] = verifyGameArray(gameDefs[arg.game].arrays[arg.array], [...gamesDataRep.value[arg.game][arg.array], null]);
+        gamesDataRep.value[arg.game][arg.array] = verifyGameArray(gameDefs[arg.game].arrays[arg.array], [
+            ...gamesDataRep.value[arg.game][arg.array],
+            null,
+        ]);
     }
     else {
         nodecg.log.error(`addArrayItem argument references non-existent game and/or array, game:"${arg.game}", array:"${arg.array}"`);
@@ -116,8 +115,10 @@ nodecg.listenFor('resetGame', (gameName) => {
         nodecg.log.error(`Can't reset game "${gameName}"`);
         return;
     }
-    gamesDataRep.value[gameName] = {};
-    gamesDataRep.value[gameName] = verifyGameData(gameDef, null);
+    if (gamesDataRep.value) {
+        gamesDataRep.value[gameName] = {};
+        gamesDataRep.value[gameName] = verifyGameData(gameDef, null);
+    }
 });
 function verifyGamesData(gameDefs, checkData) {
     if (checkData && typeof checkData === 'object')
@@ -137,9 +138,7 @@ function verifyGameData(game, checkData) {
 }
 function verifyGameArray(arrayDef, checkArray) {
     const gameArrayData = [];
-    const arraySize = checkArray && checkArray.length > arrayDef.min
-        ? checkArray.length
-        : arrayDef.min;
+    const arraySize = checkArray && checkArray.length > arrayDef.min ? checkArray.length : arrayDef.min;
     for (let i = 0; i < arraySize; i++) {
         const arrayItem = {};
         for (const [key, value] of Object.entries(arrayDef.fields)) {
@@ -154,37 +153,26 @@ function verifyGameArray(arrayDef, checkArray) {
                     }
                     else
                         arrayItem[key] = { val: value.min ? value.min : 0, old: 0 };
-                    if (value.unique &&
-                        gameArrayData.map((x) => x[key]).indexOf(arrayItem[key]) !== -1) {
+                    if (value.unique && gameArrayData.map((x) => x[key]).indexOf(arrayItem[key]) !== -1) {
                         arrayItem[key] = { val: value.min ? value.min : 0, old: 0 };
                         while (gameArrayData.map((x) => x[key]).indexOf(arrayItem[key]) !== -1 &&
-                            (value.max === undefined ||
-                                arrayItem[key].val <= value.max))
+                            (value.max === undefined || arrayItem[key].val <= value.max))
                             arrayItem[key].val++;
                     }
                     break;
                 case 'string': {
-                    let proposedString = existing !== undefined && typeof existing.val === 'string'
-                        ? existing.val
-                        : value.unique
-                            ? '1'
-                            : '';
-                    if (value.unique &&
-                        gameArrayData.map((x) => x[key].val).indexOf(proposedString) !== -1)
+                    let proposedString = existing !== undefined && typeof existing.val === 'string' ? existing.val : value.unique ? '1' : '';
+                    if (value.unique && gameArrayData.map((x) => x[key].val).indexOf(proposedString) !== -1)
                         proposedString = '1';
                     if (value.unique)
-                        while (gameArrayData.map((x) => x[key].val).indexOf(proposedString) !==
-                            -1)
+                        while (gameArrayData.map((x) => x[key].val).indexOf(proposedString) !== -1)
                             proposedString = (+proposedString + 1).toString();
                     arrayItem[key] = { val: proposedString, old: '' };
                     break;
                 }
                 case 'stringEnum': {
-                    let proposedVal = existing !== undefined && typeof existing.val === 'number'
-                        ? existing.val
-                        : 0;
-                    if (value.unique &&
-                        gameArrayData.map((x) => x[key].val).indexOf(proposedVal) !== -1)
+                    let proposedVal = existing !== undefined && typeof existing.val === 'number' ? existing.val : 0;
+                    if (value.unique && gameArrayData.map((x) => x[key].val).indexOf(proposedVal) !== -1)
                         proposedVal = 0;
                     while (proposedVal < value.values.length &&
                         gameArrayData.map((x) => x[key].val).indexOf(proposedVal) !== -1) {
@@ -197,11 +185,8 @@ function verifyGameArray(arrayDef, checkArray) {
                     break;
                 }
                 case 'image': {
-                    let proposedVal = existing !== undefined && typeof existing.val === 'number'
-                        ? existing.val
-                        : 0;
-                    if (value.unique &&
-                        gameArrayData.map((x) => x[key].val).indexOf(proposedVal) !== -1)
+                    let proposedVal = existing !== undefined && typeof existing.val === 'number' ? existing.val : 0;
+                    if (value.unique && gameArrayData.map((x) => x[key].val).indexOf(proposedVal) !== -1)
                         proposedVal = 0;
                     while (proposedVal < value.values.length &&
                         gameArrayData.map((x) => x[key].val).indexOf(proposedVal) !== -1) {
@@ -219,10 +204,7 @@ function verifyGameArray(arrayDef, checkArray) {
                 }
                 case 'VFRenown': {
                     let renown = value.hadria ? 1 : 0;
-                    if (existing &&
-                        typeof existing.val === 'number' &&
-                        existing.val >= 0 &&
-                        existing.val <= 12) {
+                    if (existing && typeof existing.val === 'number' && existing.val >= 0 && existing.val <= 12) {
                         renown = existing.val;
                     }
                     arrayItem[key] = { val: renown, old: renown };
@@ -300,6 +282,10 @@ function vfRenownChange(demigodIndex, newRenown, demigodData) {
         };
 }
 function vfSmite(index) {
+    if (!gamesDataRep.value) {
+        nodecg.log.error(`Can't smite without valid game data replicant`);
+        return;
+    }
     const demigods = gamesDataRep.value['Veiled Fate']['Demigods'];
     const demigod = demigods[index];
     const sameRenownItems = demigods.filter((x) => x.renown && x.renown.val === demigod.renown.val);

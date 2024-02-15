@@ -41,7 +41,8 @@ activeGameRep.on('change', (newVal) => {
     });
 });
 gamesdataRep.on('change', (newVal, oldVal) => {
-    gamesDataOld = oldVal;
+    if (oldVal)
+        gamesDataOld = oldVal;
     populateDash();
 });
 gamesRep.on('change', (newVal) => {
@@ -111,15 +112,13 @@ function populateDash() {
                                 image.src = url;
                                 if (fieldDef.dashHeight)
                                     image.style.height = fieldDef.dashHeight;
-                                fieldCell.style.height =
-                                    getComputedStyle(image).getPropertyValue('height');
+                                fieldCell.style.height = getComputedStyle(image).getPropertyValue('height');
                                 break;
                             }
                             case 'VFRenown': {
                                 const hadria = ((_a = data.image) === null || _a === void 0 ? void 0 : _a.val) !== undefined &&
                                     ((_b = arrayDef.fields['image']) === null || _b === void 0 ? void 0 : _b.type) === 'image' &&
-                                    arrayDef.fields['image'].values[+data.image.val].name ===
-                                        'Hadria';
+                                    arrayDef.fields['image'].values[+data.image.val].name === 'Hadria';
                                 const plusFunc = () => {
                                     const arg = {
                                         newVal: +data[field].val + 1,
@@ -163,8 +162,7 @@ function populateDash() {
                                 else {
                                     button.innerHTML = field;
                                 }
-                                fieldCell.style.height =
-                                    getComputedStyle(button).getPropertyValue('height');
+                                fieldCell.style.height = getComputedStyle(button).getPropertyValue('height');
                                 fieldCell.style.cursor = 'pointer';
                                 fieldCell.onclick = () => {
                                     const arg = {
@@ -245,8 +243,7 @@ function verifyElement(parent, index, nodeName, last) {
             parent.removeChild(childNodes[i]);
         }
     }
-    if (possibleExistingElement &&
-        possibleExistingElement.nodeName == nodeName.toUpperCase()) {
+    if (possibleExistingElement && possibleExistingElement.nodeName == nodeName.toUpperCase()) {
         return possibleExistingElement;
     }
     const newElement = document.createElement(nodeName);
@@ -311,9 +308,7 @@ function submitArray(gameName, arrayName, noChange) {
             }
             animateData.push(animateArrayItem);
         }
-        if (vfSmites &&
-            typeof ((_b = (_a = gamesdataRep.value['Veiled Fate']['Hadria'][0]) === null || _a === void 0 ? void 0 : _a.renown) === null || _b === void 0 ? void 0 : _b.val) ===
-                'number') {
+        if (vfSmites && typeof ((_b = (_a = gamesdataRep.value['Veiled Fate']['Hadria'][0]) === null || _a === void 0 ? void 0 : _a.renown) === null || _b === void 0 ? void 0 : _b.val) === 'number') {
             const oldHadriaRenown = gamesdataRep.value['Veiled Fate']['Hadria'][0].renown.val;
             let newHadriaRenown = oldHadriaRenown + vfSmites;
             if (newHadriaRenown > 12)

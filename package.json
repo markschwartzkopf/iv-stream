@@ -8,7 +8,7 @@
 		"extension"
 	],
 	"nodecg": {
-		"compatibleRange": "^1.8.1",
+		"compatibleRange": "^2.0.0",
 		"dashboardPanels": [
 			{
 				"name": "Main Dashboard",
@@ -44,6 +44,8 @@
 	"author": "Mark Schwartzkopf",
 	"license": "MIT",
 	"devDependencies": {
+		"@nodecg/types": "^2.1.12",
+		"@types/node": "^20.11.19",
 		"@types/node-fetch": "^2.6.11",
 		"@typescript-eslint/eslint-plugin": "^5.33.1",
 		"@typescript-eslint/parser": "^5.33.1",

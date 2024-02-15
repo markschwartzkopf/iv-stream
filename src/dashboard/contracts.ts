@@ -1,4 +1,4 @@
-/// <reference path="../../../../types/browser.d.ts" />
+
 /* import { Contract } from '../extension/replicants'; //'./replicants';
 
 const contractsRep = nodecg.Replicant<Contract[]>('contracts');

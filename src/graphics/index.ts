@@ -1,4 +1,8 @@
-/// <reference path="../../../../types/browser.d.ts" />
+declare global {
+  let NodeCG: typeof NodeCGAPIClient;
+  let nodecg: NodeCGAPIClient;
+}
+import { NodeCGAPIClient } from '@nodecg/types/client/api/api.client';
 import {
 	AnimateArrayArg,
 	AnimateData,
