@@ -40,6 +40,8 @@
 		"build:copyhtml": "cpy \"src/**/*.html\" \"./\" --parents",
 		"build:copycss": "cpy \"src/**/*.css\" \"./\" --parents",
 		"build:copyico": "cpy \"src/**/*.ico\" \"./\" --parents",
+    "build:copypng": "cpy \"src/**/*.png\" \"./\" --parents",
+    "build:copysvg": "cpy \"src/**/*.svg\" \"./\" --parents",
 		"build:copyassets": "cpy \"assets/**/*\" \"./dashboard/assets\" --parents && cpy \"assets/**/*\" \"./graphics/assets\" --parents"
 	},
 	"author": "Mark Schwartzkopf",
