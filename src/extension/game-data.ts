@@ -75,6 +75,7 @@ const gameDefs: GameDefs = {
           image: {
             type: 'image',
             unique: true,
+            readonly: true,
             dashHeight: '4.3em',
             values: [
               { name: 'Pentha', url: 'assets/veiled-fate/pentha-marker.svg' },
@@ -86,14 +87,11 @@ const gameDefs: GameDefs = {
               { name: 'Naka', url: 'assets/veiled-fate/naka-marker.svg' },
               { name: 'Belan', url: 'assets/veiled-fate/belan-marker.svg' },
               { name: 'Isabel', url: 'assets/veiled-fate/isabel-marker.svg' },
-              {
-                name: 'Sorcerer',
-                url: 'assets/veiled-fate/sorcerer-marker.svg',
-              },
+              { name: 'Sorcerer', url: 'assets/veiled-fate/sorcerer-marker.svg' },
             ],
           },
           renown: { type: 'VFRenown' },
-          place: { type: 'integer', min: 1, readonly: true },
+          place: { type: 'integer', min: 0, readonly: true },
           smite: {
             type: 'button',
             imageUrl: 'assets/veiled-fate/smite.svg',
@@ -310,6 +308,11 @@ function verifyGameArray(arrayDef: GameArrayDef, checkArray: null | (GameArrayDa
           }
           arrayItem[key] = { val: renown, old: renown };
           if (existing === undefined && !value.hadria) vfRenownChange(arrayItem, renown, gameArrayData);
+          if (arrayItem.image && arrayItem.image.val === 9) {
+            if (!checkArray) checkArray = [];
+            if (!checkArray[i]) checkArray[i] = {};
+            (checkArray[i] as GameArrayData).place = { val: 0, old: 0 };
+          }
           break;
         }
         default:
@@ -362,7 +365,15 @@ function vfRenownChange(
     return;
   }
   const demigod = typeof demigodIndex === 'object' ? demigodIndex : demigods[demigodIndex];
-  const sameRenownItems = demigods.filter((x) => x.renown && x.renown.val === newRenown);
+  if (demigod.image !== undefined && demigod.image.val === 9) {
+    demigod.place = { val: 0, old: 0 };
+    const oldRenown = +(demigod.renown?.old !== undefined ? demigod.renown.old : newRenown);
+    demigod.renown = { val: newRenown, old: oldRenown };
+    return;
+  }
+  const sameRenownItems = demigods.filter(
+    (x) => x.renown && x.renown.val === newRenown && x.image && x.image.val !== 9,
+  );
   sameRenownItems.sort((a, b) => (a.place.val > b.place.val ? 1 : -1));
   for (let i = 0; i < sameRenownItems.length; i++) {
     sameRenownItems[i].place.val = i + 2;
@@ -371,7 +382,9 @@ function vfRenownChange(
   if (oldRenown === newRenown) return; //likely newly instatiated item
   demigod.renown = { val: newRenown, old: demigod.renown.old as number };
   if (oldRenown !== null) {
-    const sameRenownItems = demigods.filter((x) => x.renown && x.renown.val === oldRenown);
+    const sameRenownItems = demigods.filter(
+      (x) => x.renown && x.renown.val === oldRenown && x.image && x.image.val !== 9,
+    );
     sameRenownItems.sort((a, b) => (a.place.val > b.place.val ? 1 : -1));
     for (let i = 0; i < sameRenownItems.length; i++) {
       sameRenownItems[i].place.val = i + 1;
