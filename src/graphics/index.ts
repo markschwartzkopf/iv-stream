@@ -221,7 +221,6 @@ function animate(arg: AnimateArrayArg) {
                       anim.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
                       //@ts-ignore
                       anim.onend = () => {
-                        console.log(`${JSON.stringify(demigod)}: needMarker: ${needMarker}`);
                         marker.transform.baseVal[0].setTranslate(newVal, 0);
                         demigod.marker!.removeChild(anim);
                         if (needMarker)

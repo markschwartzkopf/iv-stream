@@ -340,7 +340,6 @@ function vfRenownChange(
   newRenown: number,
   demigodData?: GameArrayData[],
 ) {
-  console.log(`new renown: ${newRenown}`);
   let data = demigodData;
   if (!data && gamesDataRep.value && gamesDataRep.value['Veiled Fate']) {
     data =
@@ -376,7 +375,7 @@ function vfRenownChange(
   }
   const demigod = typeof demigodIndex === 'object' ? demigodIndex : demigods[demigodIndex];
   if (demigod.image !== undefined && demigod.image.val === 9) {
-    console.log('sorc');
+		//Sorcerer has no place, and so is place 0
     demigod.place = { val: 0, old: 0 };
     const oldRenown = +(demigod.renown?.old !== undefined ? demigod.renown.old : newRenown);
     demigod.renown = { val: newRenown, old: oldRenown };
