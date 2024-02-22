@@ -25,9 +25,29 @@ const arrayHolder = document.getElementById('array-holder') as HTMLDivElement;
 const resetButton = document.getElementById('reset') as HTMLButtonElement;
 resetButton.onclick = () => {
   if (confirm('Really reset the game?')) {
-    NodeCG.waitForReplicants(activeGameRep).then(() => {
-      nodecg.sendMessage('resetGame', activeGameRep.value);
-    });
+    NodeCG.waitForReplicants(activeGameRep)
+      .then(() => {
+        console.log('resetGame');
+        return nodecg.sendMessage('resetGame', activeGameRep.value)
+      })
+			.then(() => {
+				return wait(1000);
+			})
+      .then(() => {
+        return NodeCG.waitForReplicants(activeGameRep, gamesdataRep)
+      })
+			.then(() => {
+				const activeGame = activeGameRep.value
+				if (!activeGame) return Promise.reject('activeGame replicant missing')
+				if (!gamesdataRep.value) return Promise.reject('gamesData replicant missing')
+				const dataArrays = Object.entries(gamesdataRep.value[activeGame]);
+				for (const [arrayName, arrayData] of dataArrays) {
+					submitArray(activeGame, arrayName);
+				}
+			})
+      .catch((err) => {
+        nodecg.log.error(err);
+      });
   }
 };
 let gamesDataOld: GamesData | null = null;
@@ -83,8 +103,10 @@ function populateDash() {
       let arrayIndex = -1;
       for (const [arrayName, arrayData] of dataArrays) {
         const oldArrayData = oldGameData && oldGameData[arrayName] ? oldGameData[arrayName] : null;
+				let arrayChanged = false;
         if (oldArrayData && oldArrayData.length !== arrayData.length) {
-          submitArray(activeGame, arrayName, true);
+          arrayChanged = true;
+					//submitArray(activeGame, arrayName, true);
         }
         const arrayDef = defArrays[arrayName];
         if (arrayDef === undefined) nodecg.log.error(`Game definition/data mismatch`);
@@ -102,7 +124,6 @@ function populateDash() {
             headerCell.innerHTML = field[0];
           }
         }
-        let arrayChanged = false;
         const headerElements = arrayDef.display === 'table' ? 1 : 0;
         if (arrayData.length === 0) {
           const childNodes = arrayTable.childNodes;
@@ -153,6 +174,7 @@ function populateDash() {
                     demiIndex: i,
                     hadria,
                   };
+                  console.log('vfRenownChange');
                   nodecg.sendMessage('vfRenownChange', arg);
                 };
                 const minusFunc = () => {
@@ -161,6 +183,7 @@ function populateDash() {
                     demiIndex: i,
                     hadria,
                   };
+                  console.log('vfRenownChange');
                   nodecg.sendMessage('vfRenownChange', arg);
                 };
                 const changed = data[field].val !== data[field].old;
@@ -194,6 +217,7 @@ function populateDash() {
                     button: field,
                     index: i,
                   };
+                  console.log('buttonPush');
                   nodecg.sendMessage('buttonPush', arg);
                 };
                 const changed = data[field].val !== data[field].old;
@@ -225,6 +249,7 @@ function populateDash() {
               game: activeGame,
               array: arrayName,
             };
+            console.log('removeArrayItem');
             nodecg.sendMessage('removeArrayItem', arg);
           };
         }
@@ -237,6 +262,7 @@ function populateDash() {
           plus.innerHTML = label;
           plus.onclick = () => {
             const arg: AddArrayItemArg = { game: activeGame, array: arrayName };
+            console.log('addArrayItem');
             nodecg.sendMessage('addArrayItem', arg);
           };
         }
@@ -300,6 +326,7 @@ function verifyIncDecElement(
 }
 
 function submitArray(gameName: string, arrayName: string, noChange?: boolean) {
+  console.log('submit');
   NodeCG.waitForReplicants(gamesdataRep, gamesRep).then(() => {
     if (!gamesdataRep.value || !gamesRep.value) return;
     const newRepArray: GameArrayData[] = JSON.parse(JSON.stringify(gamesdataRep.value[gameName][arrayName]));
@@ -347,6 +374,7 @@ function submitArray(gameName: string, arrayName: string, noChange?: boolean) {
         demiIndex: 0,
         hadria: true,
       };
+      console.log('vfRenownChange');
       nodecg.sendMessage('vfRenownChange', arg);
     }
     const arg: AnimateArrayArg = {
@@ -354,7 +382,16 @@ function submitArray(gameName: string, arrayName: string, noChange?: boolean) {
       array: arrayName,
       data: animateData,
     };
+    console.log('animateArray');
     nodecg.sendMessage('animateArray', arg);
     if (!noChange) gamesdataRep.value[gameName][arrayName] = newRepArray;
+  });
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((res) => {
+    setTimeout(() => {
+      res();
+    }, ms);
   });
 }

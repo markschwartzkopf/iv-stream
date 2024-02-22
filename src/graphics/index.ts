@@ -151,7 +151,7 @@ function animate(arg: AnimateArrayArg) {
             demigod: typeof demigodMarkers[string];
             place: number;
             smited: boolean;
-						renown: number;
+            renown: number;
           }[][] = [];
           arg.data.forEach((val) => {
             if (
@@ -184,9 +184,12 @@ function animate(arg: AnimateArrayArg) {
                 demigod: demigod,
                 place: +val.place,
                 smited: !!val.smite,
-								renown: +val.renown
+                renown: +val.renown,
               });
-            } else renowns[+val.renown] = [{ demigod: demigod, place: +val.place, smited: !!val.smite, renown: +val.renown }];
+            } else
+              renowns[+val.renown] = [
+                { demigod: demigod, place: +val.place, smited: !!val.smite, renown: +val.renown },
+              ];
           });
           for (let i = 0; i < renowns.length; i++) {
             const renown = renowns[i];
@@ -196,10 +199,7 @@ function animate(arg: AnimateArrayArg) {
               for (let j = 0; j < renown.length; j++) {
                 const demigod = renown[j].demigod;
                 demigod.old = demigod.val;
-                const newVal =
-                  i < 13
-                    ? positions(i, places)[renown[j].place - 1]
-                    : positions(renown[j].renown, 0)[0];
+                const newVal = i < 13 ? positions(i, places)[renown[j].place - 1] : positions(renown[j].renown, 0)[0];
                 demigod.val = newVal;
                 if (demigod.marker) {
                   const marker = demigod.marker;
@@ -221,6 +221,7 @@ function animate(arg: AnimateArrayArg) {
                       anim.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
                       //@ts-ignore
                       anim.onend = () => {
+                        console.log(`${JSON.stringify(demigod)}: needMarker: ${needMarker}`);
                         marker.transform.baseVal[0].setTranslate(newVal, 0);
                         demigod.marker!.removeChild(anim);
                         if (needMarker)

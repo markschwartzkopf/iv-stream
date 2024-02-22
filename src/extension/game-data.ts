@@ -202,7 +202,7 @@ nodecg.listenFor('vfRenownChange', (arg: vfRenownChangeArg) => {
   vfRenownChange(arg.hadria ? 'hadria' : arg.demiIndex, arg.newVal);
 });
 
-nodecg.listenFor('resetGame', (gameName: string) => {
+nodecg.listenFor('resetGame', (gameName: string, ack) => {
   const gameDef = gameDefs[gameName];
   if (!gameDef) {
     nodecg.log.error(`Can't reset game "${gameName}"`);
@@ -211,6 +211,9 @@ nodecg.listenFor('resetGame', (gameName: string) => {
   if (gamesDataRep.value) {
     gamesDataRep.value[gameName] = {};
     gamesDataRep.value[gameName] = verifyGameData(gameDef, null);
+  }
+  if (ack && !ack.handled) {
+    ack(null);
   }
 });
 
@@ -308,10 +311,16 @@ function verifyGameArray(arrayDef: GameArrayDef, checkArray: null | (GameArrayDa
           }
           arrayItem[key] = { val: renown, old: renown };
           if (existing === undefined && !value.hadria) vfRenownChange(arrayItem, renown, gameArrayData);
-          if (arrayItem.image && arrayItem.image.val === 9) {
+          /* if (arrayItem.image && arrayItem.image.val === 9) {
             if (!checkArray) checkArray = [];
             if (!checkArray[i]) checkArray[i] = {};
             (checkArray[i] as GameArrayData).place = { val: 0, old: 0 };
+          } */
+          if (!checkArray) checkArray = [];
+          if (!checkArray[i]) {
+            checkArray[i] = {};
+            (checkArray[i] as GameArrayData).place =
+              arrayItem.image && arrayItem.image.val === 9 ? { val: 0, old: 0 } : { val: 1, old: 1 };
           }
           break;
         }
@@ -331,6 +340,7 @@ function vfRenownChange(
   newRenown: number,
   demigodData?: GameArrayData[],
 ) {
+  console.log(`new renown: ${newRenown}`);
   let data = demigodData;
   if (!data && gamesDataRep.value && gamesDataRep.value['Veiled Fate']) {
     data =
@@ -366,6 +376,7 @@ function vfRenownChange(
   }
   const demigod = typeof demigodIndex === 'object' ? demigodIndex : demigods[demigodIndex];
   if (demigod.image !== undefined && demigod.image.val === 9) {
+    console.log('sorc');
     demigod.place = { val: 0, old: 0 };
     const oldRenown = +(demigod.renown?.old !== undefined ? demigod.renown.old : newRenown);
     demigod.renown = { val: newRenown, old: oldRenown };
@@ -390,11 +401,10 @@ function vfRenownChange(
       sameRenownItems[i].place.val = i + 1;
     }
   }
-  if (demigod.place)
-    demigod.place = {
-      val: 1,
-      old: demigod.place.old as number,
-    };
+  demigod.place = {
+    val: 1,
+    old: demigod.place ? (demigod.place.old as number) : 1,
+  };
 }
 
 function vfSmite(index: number) {
