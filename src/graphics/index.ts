@@ -3,7 +3,7 @@ declare global {
   let nodecg: NodeCGAPIClient;
 }
 import { NodeCGAPIClient } from '@nodecg/types/client/api/api.client';
-import { AnimateArrayArg, AnimateData, GameArrayData, GameDefs, GamesData } from '../extension/game-data';
+import { AnimateArg, AnimateArrayArg, AnimateData, AnimateToggleArg, GameArrayData, GameDefs, GamesData } from '../extension/game-data';
 
 const demigodMarkers: {
   [k: string]: {
@@ -47,7 +47,7 @@ const gamesRep = nodecg.Replicant<GameDefs>('games');
 function initArray(gameName: string, arrayName: string) {
   NodeCG.waitForReplicants(gamesdataRep, gamesRep).then(() => {
     if (!gamesdataRep.value || !gamesRep.value) return;
-    const repArrayData: GameArrayData[] = JSON.parse(JSON.stringify(gamesdataRep.value[gameName][arrayName]));
+    const repArrayData: GameArrayData[] = JSON.parse(JSON.stringify(gamesdataRep.value[gameName].arrays[arrayName]));
     const gameItemDefs = gamesRep.value[gameName].arrays[arrayName].fields;
     const animateData: AnimateData = [];
     for (let i = 0; i < repArrayData.length; i++) {
@@ -72,7 +72,7 @@ function initArray(gameName: string, arrayName: string) {
       }
       animateData.push(animateArrayItem);
     }
-    animate({ game: gameName, array: arrayName, data: animateData });
+    animateArray({ game: gameName, array: arrayName, data: animateData });
   });
 }
 
@@ -95,9 +95,37 @@ const vfSvgData = vfSvgObject.data;
 vfSvgObject.data = '';
 vfSvgObject.data = vfSvgData;
 
-nodecg.listenFor('animateArray', animate);
+nodecg.listenFor('animate', (arg) => {
+	if (arg.array) {
+		animateArray(arg)
+	} else animateToggle(arg)
+});
 
-function animate(arg: AnimateArrayArg) {
+function animateToggle(arg: AnimateToggleArg) {
+	switch (arg.game) {
+		case 'Veiled Fate': {
+			switch (arg.toggle) {
+				case 'Celestial': {
+					break;
+				}
+				case 'Age': {
+					break;
+				}
+				default: {
+          nodecg.log.error(`No graphics for toggle "${arg.toggle}" in game "${arg.game}"`);
+          break;
+        }
+			}
+			break;
+		}
+		default: {
+      nodecg.log.error(`No graphics for game "${arg.game}"`);
+      break;
+    }
+	}
+}
+
+function animateArray(arg: AnimateArrayArg) {
   switch (arg.game) {
     case 'Veiled Fate': {
       const MARKER_SHOW_DURATION = 500;

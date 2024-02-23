@@ -8,6 +8,15 @@ type GameDef = {
   arrays: {
     [k: string]: GameArrayDef;
   };
+  toggles: {
+    [k: string]: GameToggleDef;
+  };
+};
+
+type GameToggleDef = {
+  type: 'single' | 'multiple';
+  values: string[];
+  image?: boolean;
 };
 
 type GameArrayDef = {
@@ -53,7 +62,17 @@ type VFRenownDef = {
 };
 
 export type GamesData = { [k: string]: GameData };
-type GameData = { [k: string]: GameArrayData[] };
+type GameData = {
+  arrays: {
+    [k: string]: GameArrayData[];
+  };
+  toggles: {
+    [k: string]: GameToggleData;
+  };
+};
+
+export type GameToggleData = { val: number[]; old: number[] };
+
 export type GameArrayData =
   | { [k: string]: { old: string; val: string } }
   | { [k: string]: { old: number; val: number } };
@@ -61,6 +80,7 @@ export type GameArrayData =
 const gameDefs: GameDefs = {
   Moonrakers: {
     arrays: {},
+    toggles: {},
   },
   'Veiled Fate': {
     arrays: {
@@ -117,6 +137,30 @@ const gameDefs: GameDefs = {
         max: 1,
       },
     },
+    toggles: {
+      Celestial: {
+        type: 'single',
+        values: ['none', 'Arbiter', 'Eredan', 'Tormentor', 'Mother To All', 'Steward', 'Sorcerer', 'The Prophet'],
+      },
+      Age: {
+        type: 'single',
+        values: [
+          'none',
+          '1 - Arbiter',
+          '1 - Chaos',
+          '1 - Natural Order',
+          '1 - Sleight Of Hand',
+          '2 - Decree',
+          '2 - Evil Curses',
+          '2 - Revelation',
+          '2 - The Census',
+          '3 - Defend Borders',
+          `3 - Eredan's Blessing`,
+          '3 - Judgement',
+          '3 - Omnipotence',
+        ],
+      },
+    },
   },
 };
 
@@ -128,6 +172,45 @@ gamesDataRep.value = verifyGamesData(gameDefs, gamesDataRep.value);
 
 const activeGameRep = nodecg.Replicant<string>('active-game');
 if (!activeGameRep.value || !gameDefs[activeGameRep.value]) activeGameRep.value = Object.keys(gameDefs)[0];
+
+export type ToggleArg = {
+  game: string;
+  toggle: string;
+  value: number;
+  newVal: boolean;
+};
+nodecg.listenFor('toggle', (arg: ToggleArg) => {
+  if (
+    gameDefs[arg.game] &&
+    gameDefs[arg.game].toggles[arg.toggle] &&
+    gamesDataRep.value &&
+    gamesDataRep.value[arg.game] &&
+    gamesDataRep.value[arg.game].toggles[arg.toggle]
+  ) {
+    const toggleDef = gameDefs[arg.game].toggles[arg.toggle];
+    const toggle = gamesDataRep.value[arg.game].toggles[arg.toggle];
+    if (arg.value >= toggleDef.values.length || arg.value < 0) {
+      nodecg.log.error(`toggle argument value out of range, game:"${arg.game}", array:"${arg.toggle}"`);
+      return;
+    }
+    if (toggleDef.type === 'single') {
+      if (arg.newVal) {
+        toggle.val = [arg.value];
+      } else if (toggle.val[0] === arg.value) toggle.val = [0];
+      return;
+    }
+    if (arg.newVal) {
+      if (toggle.val.indexOf(arg.value) === -1) toggle.val.push(arg.value);
+    } else {
+      const index = toggle.val.indexOf(arg.value);
+      if (index !== -1) toggle.val.splice(index, 1);
+    }
+  } else {
+    nodecg.log.error(
+      `toggle argument references non-existent game and/or array, game:"${arg.game}", array:"${arg.toggle}"`,
+    );
+  }
+});
 
 export type ButtonArg = {
   game: string;
@@ -144,11 +227,18 @@ nodecg.listenFor('buttonPush', (arg: ButtonArg) => {
 export type AnimateData = {
   [k: string]: number | string | AnimateData[number];
 }[];
+export type AnimateArg = AnimateArrayArg | AnimateToggleArg
 export type AnimateArrayArg = {
   game: string;
   array: string;
   data: AnimateData;
 };
+export type AnimateToggleArg = {
+  game: string;
+  toggle: string;
+  data: number[];
+};
+
 export type AddArrayItemArg = { game: string; array: string };
 nodecg.listenFor('addArrayItem', (arg: AddArrayItemArg) => {
   if (
@@ -156,10 +246,10 @@ nodecg.listenFor('addArrayItem', (arg: AddArrayItemArg) => {
     gameDefs[arg.game].arrays[arg.array] &&
     gamesDataRep.value &&
     gamesDataRep.value[arg.game] &&
-    gamesDataRep.value[arg.game][arg.array]
+    gamesDataRep.value[arg.game].arrays[arg.array]
   ) {
-    gamesDataRep.value[arg.game][arg.array] = verifyGameArray(gameDefs[arg.game].arrays[arg.array], [
-      ...gamesDataRep.value[arg.game][arg.array],
+    gamesDataRep.value[arg.game].arrays[arg.array] = verifyGameArray(gameDefs[arg.game].arrays[arg.array], [
+      ...gamesDataRep.value[arg.game].arrays[arg.array],
       null,
     ]);
   } else {
@@ -180,12 +270,12 @@ nodecg.listenFor('removeArrayItem', (arg: RemoveArrayItemArg) => {
     gameDefs[arg.game].arrays[arg.array] &&
     gamesDataRep.value &&
     gamesDataRep.value[arg.game] &&
-    gamesDataRep.value[arg.game][arg.array]
+    gamesDataRep.value[arg.game].arrays[arg.array]
   ) {
     if (arg.game === 'Veiled Fate' && arg.array === 'Demigods') {
-      vfSmite(gamesDataRep.value[arg.game][arg.array].length - 1);
+      vfSmite(gamesDataRep.value[arg.game].arrays[arg.array].length - 1);
     }
-    gamesDataRep.value[arg.game][arg.array].pop();
+    gamesDataRep.value[arg.game].arrays[arg.array].pop();
   } else {
     nodecg.log.error(
       `addArrayItem argument references non-existent game and/or array, game:"${arg.game}", array:"${arg.array}"`,
@@ -209,7 +299,7 @@ nodecg.listenFor('resetGame', (gameName: string, ack) => {
     return;
   }
   if (gamesDataRep.value) {
-    gamesDataRep.value[gameName] = {};
+    gamesDataRep.value[gameName] = { arrays: {}, toggles: {} };
     gamesDataRep.value[gameName] = verifyGameData(gameDef, null);
   }
   if (ack && !ack.handled) {
@@ -227,11 +317,21 @@ function verifyGamesData(gameDefs: GameDefs, checkData: undefined | GamesData) {
 }
 
 function verifyGameData(game: GameDef, checkData: null | GameData) {
-  const gameData: GameData = {};
+  const gameData: GameData = { arrays: {}, toggles: {} };
   for (const [key, value] of Object.entries(game.arrays)) {
-    gameData[key] = verifyGameArray(value, checkData && checkData[key] ? checkData[key] : null);
+    gameData.arrays[key] = verifyGameArray(value, checkData && checkData.arrays[key] ? checkData.arrays[key] : null);
+  }
+  for (const [key, value] of Object.entries(game.toggles)) {
+    gameData.toggles[key] = verifyGameToggle(
+      value,
+      checkData && checkData.toggles[key] ? checkData.toggles[key] : null,
+    );
   }
   return gameData;
+}
+
+function verifyGameToggle(toggleDef: GameToggleDef, checkToggle: null | GameToggleData): GameToggleData {
+  return checkToggle ? checkToggle : { val: [0], old: [0] };
 }
 
 function verifyGameArray(arrayDef: GameArrayDef, checkArray: null | (GameArrayData | null)[]) {
@@ -344,8 +444,8 @@ function vfRenownChange(
   if (!data && gamesDataRep.value && gamesDataRep.value['Veiled Fate']) {
     data =
       demigodIndex === 'hadria'
-        ? gamesDataRep.value['Veiled Fate']['Hadria']
-        : gamesDataRep.value['Veiled Fate']['Demigods'];
+        ? gamesDataRep.value['Veiled Fate'].arrays['Hadria']
+        : gamesDataRep.value['Veiled Fate'].arrays['Demigods'];
   }
   if (!data) {
     nodecg.log.error(`Can't find demigod array to process renown change on`);
@@ -357,7 +457,7 @@ function vfRenownChange(
     const hadria = demigods[0];
     if (hadria && hadria.renown) hadria.renown.val = newRenown;
     hadria.renown.old = newRenown;
-    const arg: AnimateArrayArg = {
+    const arg: AnimateArg = {
       game: 'Veiled Fate',
       array: 'Hadria',
       data: [
@@ -375,7 +475,7 @@ function vfRenownChange(
   }
   const demigod = typeof demigodIndex === 'object' ? demigodIndex : demigods[demigodIndex];
   if (demigod.image !== undefined && demigod.image.val === 9) {
-		//Sorcerer has no place, and so is place 0
+    //Sorcerer has no place, and so is place 0
     demigod.place = { val: 0, old: 0 };
     const oldRenown = +(demigod.renown?.old !== undefined ? demigod.renown.old : newRenown);
     demigod.renown = { val: newRenown, old: oldRenown };
@@ -411,7 +511,7 @@ function vfSmite(index: number) {
     nodecg.log.error(`Can't smite without valid game data replicant`);
     return;
   }
-  const demigods = gamesDataRep.value['Veiled Fate']['Demigods'];
+  const demigods = gamesDataRep.value['Veiled Fate'].arrays['Demigods'];
   const demigod = demigods[index];
   const sameRenownItems = demigods.filter((x) => x.renown && x.renown.val === demigod.renown.val);
   const i = sameRenownItems.indexOf(demigod);

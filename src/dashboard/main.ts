@@ -6,13 +6,15 @@ declare global {
 import { NodeCGAPIClient } from '@nodecg/types/client/api/api.client';
 import {
   AddArrayItemArg,
-  AnimateArrayArg,
+  AnimateArg,
   AnimateData,
   ButtonArg,
   GameArrayData,
   GameDefs,
+  GameToggleData,
   GamesData,
   RemoveArrayItemArg,
+  ToggleArg,
   vfRenownChangeArg,
 } from '../extension/game-data';
 
@@ -22,28 +24,29 @@ const activeGameRep = nodecg.Replicant<string>('active-game');
 
 const gameSelectorDiv = document.getElementById('game-selector') as HTMLDivElement;
 const arrayHolder = document.getElementById('array-holder') as HTMLDivElement;
+const toggleHolder = document.getElementById('toggle-holder') as HTMLDivElement;
 const resetButton = document.getElementById('reset') as HTMLButtonElement;
 resetButton.onclick = () => {
   if (confirm('Really reset the game?')) {
     NodeCG.waitForReplicants(activeGameRep)
       .then(() => {
-        return nodecg.sendMessage('resetGame', activeGameRep.value)
+        return nodecg.sendMessage('resetGame', activeGameRep.value);
       })
-			.then(() => {
-				return wait(1000);
-			})
       .then(() => {
-        return NodeCG.waitForReplicants(activeGameRep, gamesdataRep)
+        return wait(1000);
       })
-			.then(() => {
-				const activeGame = activeGameRep.value
-				if (!activeGame) return Promise.reject('activeGame replicant missing')
-				if (!gamesdataRep.value) return Promise.reject('gamesData replicant missing')
-				const dataArrays = Object.entries(gamesdataRep.value[activeGame]);
-				for (const [arrayName, arrayData] of dataArrays) {
-					submitArray(activeGame, arrayName);
-				}
-			})
+      .then(() => {
+        return NodeCG.waitForReplicants(activeGameRep, gamesdataRep);
+      })
+      .then(() => {
+        const activeGame = activeGameRep.value;
+        if (!activeGame) return Promise.reject('activeGame replicant missing');
+        if (!gamesdataRep.value) return Promise.reject('gamesData replicant missing');
+        const dataArrays = Object.entries(gamesdataRep.value[activeGame]);
+        for (const [arrayName, arrayData] of dataArrays) {
+          submitArray(activeGame, arrayName);
+        }
+      })
       .catch((err) => {
         nodecg.log.error(err);
       });
@@ -94,21 +97,25 @@ function populateDash() {
       const gameData = gamesdataRep.value[activeGame];
       const oldGameData = gamesDataOld ? gamesDataOld[activeGame] : null;
       const gameDef = gamesRep.value[activeGame];
-      const dataArrays = Object.entries(gameData);
+
+      const dataArrays = Object.entries(gameData.arrays);
       const defArrays = gameDef.arrays;
       if (arrayHolder.childNodes.length > dataArrays.length) {
         arrayHolder.innerHTML = '';
       }
       let arrayIndex = -1;
       for (const [arrayName, arrayData] of dataArrays) {
-        const oldArrayData = oldGameData && oldGameData[arrayName] ? oldGameData[arrayName] : null;
-				let arrayChanged = false;
+        const oldArrayData = oldGameData && oldGameData.arrays[arrayName] ? oldGameData.arrays[arrayName] : null;
+        let arrayChanged = false;
         if (oldArrayData && oldArrayData.length !== arrayData.length) {
           arrayChanged = true;
-					//submitArray(activeGame, arrayName, true);
+          //submitArray(activeGame, arrayName, true);
         }
         const arrayDef = defArrays[arrayName];
-        if (arrayDef === undefined) nodecg.log.error(`Game definition/data mismatch`);
+        if (arrayDef === undefined) {
+          nodecg.log.error(`Game definition/data mismatch`);
+          return;
+        }
         const arrayFields = Object.entries(arrayDef.fields);
         arrayIndex++;
         const arrayDiv = verifyElement(arrayHolder, arrayIndex, 'div');
@@ -269,6 +276,90 @@ function populateDash() {
           };
         }
       }
+
+      const dataToggles = Object.entries(gameData.toggles);
+      const defToggles = gameDef.toggles;
+      if (toggleHolder.childNodes.length > dataToggles.length) {
+        arrayHolder.innerHTML = '';
+      }
+      let toggleIndex = -1;
+      for (const [toggleName, toggleData] of dataToggles) {
+        let toggleChanged = false;
+        const toggleDef = defToggles[toggleName];
+        if (toggleDef === undefined) {
+          nodecg.log.error(`Game definition/data mismatch`);
+          return;
+        }
+        toggleIndex++;
+        const toggleDiv = verifyElement(toggleHolder, toggleIndex, 'div');
+        const titleDiv = verifyElement(toggleDiv, 0, 'div');
+        titleDiv.innerHTML = toggleName;
+        const dropdown = toggleDef.type === 'single';
+        const togglesEl = verifyElement(toggleDiv, 1, dropdown ? 'select' : 'div');
+        if (dropdown)
+          togglesEl.onchange = () => {
+            const index = (togglesEl as HTMLSelectElement).selectedIndex;
+            const toggleArg: ToggleArg = {
+              game: activeGame,
+              toggle: toggleName,
+              value: index,
+              newVal: true,
+            };
+            nodecg.sendMessage('toggle', toggleArg);
+          };
+        for (let i = 0; i < toggleDef.values.length; i++) {
+          const checked = toggleData.val.indexOf(i) !== -1;
+          const toggleOption = verifyElement(togglesEl, i, dropdown ? 'option' : 'div');
+          if (!dropdown)
+            toggleOption.onclick = () => {
+              console.log(`Checked ${i}`);
+              if (checked && dropdown) return;
+              const toggleArg: ToggleArg = {
+                game: activeGame,
+                toggle: toggleName,
+                value: i,
+                newVal: !checked,
+              };
+              nodecg.sendMessage('toggle', toggleArg);
+            };
+          let changeClassElement: HTMLElement = toggleOption;
+          if (!dropdown) {
+            const checkbox = verifyElement(toggleOption, 0, 'input');
+            checkbox.onclick = () => {
+              return false;
+            };
+            checkbox.type = 'checkbox';
+            checkbox.id = `${activeGame}-${toggleName}-${i}`;
+            const label = verifyElement(toggleOption, 1, 'label');
+            changeClassElement = label;
+            label.onclick = () => {
+              return false;
+            };
+            label.htmlFor = checkbox.id;
+            label.innerHTML = toggleDef.values[i];
+            checkbox.checked = checked;
+          } else toggleOption.innerHTML = toggleDef.values[i];
+          if ((toggleData.val.indexOf(i) === -1) !== (toggleData.old.indexOf(i) === -1)) {
+            toggleChanged = true;
+            changeClassElement.classList.add('changed');
+          } else {
+            changeClassElement.classList.remove('changed');
+          }
+          if (checked && dropdown) (togglesEl as HTMLSelectElement).selectedIndex = i;
+        }
+
+        if (toggleChanged) {
+          if (dropdown) togglesEl.classList.add('changed');
+          const submit = verifyElement(toggleDiv, 2, 'button');
+          submit.innerHTML = 'Submit';
+          submit.onclick = () => {
+            submitToggle(activeGame, toggleName);
+          };
+        } else {
+          if (dropdown) togglesEl.classList.remove('changed');
+          verifyElement(toggleDiv, 1, dropdown ? 'select' : 'div', true);
+        }
+      }
     }
   });
 }
@@ -319,10 +410,25 @@ function verifyIncDecElement(
   return incDec;
 }
 
+function submitToggle(gameName: string, toggleName: string, noChange?: boolean) {
+  NodeCG.waitForReplicants(gamesdataRep, gamesRep).then(() => {
+    if (!gamesdataRep.value || !gamesRep.value) return;
+    const newRepToggle: GameToggleData = JSON.parse(JSON.stringify(gamesdataRep.value[gameName].toggles[toggleName]));
+    newRepToggle.old = [...newRepToggle.val];
+    const arg: AnimateArg = {
+      game: gameName,
+      toggle: toggleName,
+      data: newRepToggle.val,
+    };
+    nodecg.sendMessage('animate', arg);
+    if (!noChange) gamesdataRep.value[gameName].toggles[toggleName] = newRepToggle;
+  });
+}
+
 function submitArray(gameName: string, arrayName: string, noChange?: boolean) {
   NodeCG.waitForReplicants(gamesdataRep, gamesRep).then(() => {
     if (!gamesdataRep.value || !gamesRep.value) return;
-    const newRepArray: GameArrayData[] = JSON.parse(JSON.stringify(gamesdataRep.value[gameName][arrayName]));
+    const newRepArray: GameArrayData[] = JSON.parse(JSON.stringify(gamesdataRep.value[gameName].arrays[arrayName]));
     const animateData: AnimateData = [];
     const gameItemDefs = gamesRep.value[gameName].arrays[arrayName].fields;
     let vfSmites = 0;
@@ -358,8 +464,8 @@ function submitArray(gameName: string, arrayName: string, noChange?: boolean) {
       }
       animateData.push(animateArrayItem);
     }
-    if (vfSmites && typeof gamesdataRep.value['Veiled Fate']['Hadria'][0]?.renown?.val === 'number') {
-      const oldHadriaRenown = gamesdataRep.value['Veiled Fate']['Hadria'][0].renown.val;
+    if (vfSmites && typeof gamesdataRep.value['Veiled Fate'].arrays['Hadria'][0]?.renown?.val === 'number') {
+      const oldHadriaRenown = gamesdataRep.value['Veiled Fate'].arrays['Hadria'][0].renown.val;
       let newHadriaRenown = oldHadriaRenown + vfSmites;
       if (newHadriaRenown > 12) newHadriaRenown = 12;
       const arg: vfRenownChangeArg = {
@@ -369,14 +475,25 @@ function submitArray(gameName: string, arrayName: string, noChange?: boolean) {
       };
       nodecg.sendMessage('vfRenownChange', arg);
     }
-    const arg: AnimateArrayArg = {
+    const arg: AnimateArg = {
       game: gameName,
       array: arrayName,
       data: animateData,
     };
-    nodecg.sendMessage('animateArray', arg);
-    if (!noChange) gamesdataRep.value[gameName][arrayName] = newRepArray;
+    nodecg.sendMessage('animate', arg);
+    if (!noChange) gamesdataRep.value[gameName].arrays[arrayName] = newRepArray;
   });
+}
+
+function togglesEqual(a: number[], b: number[]) {
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort();
+  const bSorted = [...b].sort();
+  let rtn = true;
+  for (let i = 0; i < aSorted.length; i++) {
+    if (aSorted[i] !== bSorted[i]) rtn = false;
+  }
+  return rtn;
 }
 
 function wait(ms: number): Promise<void> {
