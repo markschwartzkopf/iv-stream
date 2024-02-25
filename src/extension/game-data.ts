@@ -142,6 +142,10 @@ const gameDefs: GameDefs = {
         type: 'single',
         values: ['none', 'Arbiter', 'Eredan', 'Tormentor', 'Mother To All', 'Steward', 'Sorcerer', 'The Prophet'],
       },
+			'Celestial Info': {
+				type: 'single',
+				values: ['Win Condition', 'Gameplay']
+			},
       Age: {
         type: 'single',
         values: [
@@ -160,6 +164,10 @@ const gameDefs: GameDefs = {
           '3 - Omnipotence',
         ],
       },
+			'Age Card Side': {
+				type: 'single',
+				values: ['Front', 'Back']
+			},
     },
   },
 };
@@ -456,7 +464,6 @@ function vfRenownChange(
   if (demigodIndex === 'hadria') {
     const hadria = demigods[0];
     if (hadria && hadria.renown) hadria.renown.val = newRenown;
-    hadria.renown.old = newRenown;
     const arg: AnimateArg = {
       game: 'Veiled Fate',
       array: 'Hadria',

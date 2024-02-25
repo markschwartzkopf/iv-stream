@@ -3,7 +3,16 @@ declare global {
   let nodecg: NodeCGAPIClient;
 }
 import { NodeCGAPIClient } from '@nodecg/types/client/api/api.client';
-import { AnimateArg, AnimateArrayArg, AnimateData, AnimateToggleArg, GameArrayData, GameDefs, GamesData } from '../extension/game-data';
+import {
+  AnimateArg,
+  AnimateArrayArg,
+  AnimateData,
+  AnimateToggleArg,
+  GameArrayData,
+  GameDefs,
+  GameToggleData,
+  GamesData,
+} from '../extension/game-data';
 
 const demigodMarkers: {
   [k: string]: {
@@ -25,6 +34,12 @@ const demigodMarkers: {
   Hadria: { marker: null },
 };
 
+const hadriaDamageCracks: {
+  element: SVGGraphicsElement | null;
+  val?: number;
+  old?: number;
+} = { element: null };
+
 const demigodMarkerInKeyframes: Keyframe[] = [
   { transform: 'matrix(.001, 0, 0, .001, 0, -23)', opacity: '0', offset: 0 },
   { transform: 'matrix(.001, 0, 0, .001, 0, -23)', opacity: '1', offset: 0.01 },
@@ -40,6 +55,10 @@ const showKeyframes: Keyframe[] = [
   { opacity: 0, offset: 0 },
   { opacity: 1, offset: 1 },
 ];
+
+const flipVFAgeFront: Keyframe[] = [{ transform: 'rotateY(0deg)', width: '14.43%' }];
+
+const flipVFAgeBack: Keyframe[] = [{ transform: 'rotateY(180deg)', width: '6.44%' }];
 
 const gamesdataRep = nodecg.Replicant<GamesData>('games-data');
 const gamesRep = nodecg.Replicant<GameDefs>('games');
@@ -76,6 +95,24 @@ function initArray(gameName: string, arrayName: string) {
   });
 }
 
+function initToggle(gameName: string, toggleName: string) {
+  NodeCG.waitForReplicants(gamesdataRep, gamesRep).then(() => {
+    if (!gamesdataRep.value || !gamesRep.value) return;
+    const repToggleData: GameToggleData = JSON.parse(JSON.stringify(gamesdataRep.value[gameName].toggles[toggleName]));
+    const gameToggleDefs = gamesRep.value[gameName].toggles[toggleName];
+    const animateData: AnimateData = [];
+    const arg: AnimateToggleArg = {
+      game: gameName,
+      toggle: toggleName,
+      data: repToggleData.val,
+    };
+    animateToggle(arg);
+  });
+}
+
+initToggle('Veiled Fate', 'Age');
+initToggle('Veiled Fate', 'Age Card Side');
+
 const vfSvgObject = document.getElementById('vf-svg-object') as HTMLObjectElement;
 vfSvgObject.addEventListener('load', () => {
   setTimeout(() => {
@@ -86,6 +123,12 @@ vfSvgObject.addEventListener('load', () => {
         const marker = svgDoc.getElementById(markerId);
         if (marker) demigodMarkers[key].marker = marker as any as SVGGraphicsElement;
       });
+      hadriaDamageCracks.element = svgDoc.getElementById('hadria-danger') as any as SVGGraphicsElement;
+      if (hadriaDamageCracks.element) {
+        hadriaDamageCracks.element.style.clipPath = 'inset(0 0 0 8.33%)';
+        hadriaDamageCracks.old === 8.33;
+        hadriaDamageCracks.val;
+      }
       initArray('Veiled Fate', 'Demigods');
       initArray('Veiled Fate', 'Hadria');
     } else nodecg.log.error(`Can't load Veiled Fate .svg`);
@@ -96,33 +139,77 @@ vfSvgObject.data = '';
 vfSvgObject.data = vfSvgData;
 
 nodecg.listenFor('animate', (arg) => {
-	if (arg.array) {
-		animateArray(arg)
-	} else animateToggle(arg)
+  if (arg.array) {
+    animateArray(arg);
+  } else animateToggle(arg);
 });
 
 function animateToggle(arg: AnimateToggleArg) {
-	switch (arg.game) {
-		case 'Veiled Fate': {
-			switch (arg.toggle) {
-				case 'Celestial': {
-					break;
-				}
-				case 'Age': {
-					break;
-				}
-				default: {
-          nodecg.log.error(`No graphics for toggle "${arg.toggle}" in game "${arg.game}"`);
+  NodeCG.waitForReplicants(gamesRep).then(() => {
+    if (gamesRep.value && gamesRep.value[arg.game] && gamesRep.value[arg.game].toggles[arg.toggle]) {
+      const values = gamesRep.value[arg.game].toggles[arg.toggle].values;
+      switch (arg.game) {
+        case 'Veiled Fate': {
+          switch (arg.toggle) {
+            case 'Celestial': {
+              break;
+            }
+            case 'Age': {
+              const ageCard = values[arg.data[0]];
+              const front = arg.data[0] ? `assets/veiled-fate/${ageCard}.png` : '';
+              const back = arg.data[0] ? `assets/veiled-fate/${ageCard[0]} - Back.png` : '';
+              const cardDiv = document.getElementById('vf-age') as HTMLDivElement;
+              reveal(cardDiv, 1000, 'reverse');
+              wait(1000).then(() => {
+                const frontCard = document.getElementById('vf-age-front') as HTMLImageElement;
+                const backCard = document.getElementById('vf-age-back') as HTMLImageElement;
+                let frontLoaded = false;
+                let backLoaded = false;
+                frontCard.onload = () => {
+                  frontLoaded = true;
+                  if (backLoaded) reveal(cardDiv, 1000);
+                  frontCard.onload = null;
+                };
+                backCard.onload = () => {
+                  backLoaded = true;
+                  if (frontLoaded) reveal(cardDiv, 1000);
+                  backCard.onload = null;
+                };
+                frontCard.src = front;
+                backCard.src = back;
+              });
+              break;
+            }
+            case 'Age Card Side': {
+              const front = !arg.data[0];
+              const cardDiv = document.getElementById('vf-age-card') as HTMLDivElement;
+              if (front) {
+                cardDiv.animate(flipVFAgeFront, {
+                  duration: 500,
+                  fill: 'forwards',
+                });
+              } else {
+                cardDiv.animate(flipVFAgeBack, {
+                  duration: 500,
+                  fill: 'forwards',
+                });
+              }
+              break;
+            }
+            default: {
+              nodecg.log.error(`No graphics for toggle "${arg.toggle}" in game "${arg.game}"`);
+              break;
+            }
+          }
           break;
         }
-			}
-			break;
-		}
-		default: {
-      nodecg.log.error(`No graphics for game "${arg.game}"`);
-      break;
-    }
-	}
+        default: {
+          nodecg.log.error(`No graphics for game "${arg.game}"`);
+          break;
+        }
+      }
+    } else nodecg.log.error('Graphics cannot get definition for toggle "${arg.toggle}" in game "${arg.game}"');
+  });
 }
 
 function animateArray(arg: AnimateArrayArg) {
@@ -138,22 +225,40 @@ function animateArray(arg: AnimateArrayArg) {
             const marker = hadria.marker;
             if (arg.data.length === 0) {
               reveal(marker, 1000, 'reverse');
+              if (hadriaDamageCracks.element) reveal(hadriaDamageCracks.element, 1000, 'reverse');
               return;
             }
+            console.log('hey');
             reveal(marker);
+            if (hadriaDamageCracks.element) reveal(hadriaDamageCracks.element);
+
             const renown = arg.data[0]?.renown;
             if (typeof renown !== 'number') {
               nodecg.log.error(`Bad or missing renown value for Hadria`);
               return;
             }
             const newVal = ((renown + 2) * 1920) / 14;
+            const cracksClip = (renown * 100) / 12;
+            if (
+              (hadriaDamageCracks.old === undefined || hadriaDamageCracks.old === cracksClip) &&
+              hadriaDamageCracks.element
+            )
+              hadriaDamageCracks.element.style.clipPath = `inset(0 0 0 ${cracksClip}%)`;
             if (hadria.old === undefined || hadria.old === newVal) {
+              if (hadriaDamageCracks.element) {
+                hadriaDamageCracks.element.style.clipPath = `inset(0 0 0 ${cracksClip}%)`;
+								hadriaDamageCracks.old = cracksClip;
+								hadriaDamageCracks.val = cracksClip;
+              }
               hadria.marker.transform.baseVal[0].setTranslate(newVal, 0);
               hadria.old = hadria.val === undefined ? newVal : hadria.val;
               hadria.val = newVal;
               return;
             }
             const oldVal = hadria.old;
+            const oldClip = hadriaDamageCracks.old;
+            hadriaDamageCracks.old = cracksClip;
+            hadriaDamageCracks.val = cracksClip;
             hadria.val = newVal;
             hadria.old = newVal;
             const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
@@ -166,6 +271,19 @@ function animateArray(arg: AnimateArrayArg) {
             anim.setAttributeNS(null, 'calcMode', 'spline');
             anim.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
             hadria.marker.appendChild(anim);
+            if (hadriaDamageCracks.element) {
+              console.log([{ 'clip-path': `inset(0 0 0 ${cracksClip}%)` }]);
+              hadriaDamageCracks.element.animate(
+                [
+                  { clipPath: `inset(0 0 0 ${oldClip !== undefined ? oldClip : cracksClip}%)`, offset: 0 },
+                  { clipPath: `inset(0 0 0 ${cracksClip}%)`, offset: 1 },
+                ],
+                {
+                  duration: MARKER_MOVE_DURATION / 2,
+                  fill: 'forwards',
+                },
+              );
+            }
             anim.beginElement();
           }
           break;
@@ -372,4 +490,12 @@ function renownFromPosition(position: number): number {
   if (position < 1920 / 7) return 0;
   position -= 1920 / 14;
   return Math.floor(position / (1920 / 14));
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((res) => {
+    setTimeout(() => {
+      res();
+    }, ms);
+  });
 }
