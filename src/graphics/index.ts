@@ -112,6 +112,8 @@ function initToggle(gameName: string, toggleName: string) {
 
 initToggle('Veiled Fate', 'Age');
 initToggle('Veiled Fate', 'Age Card Side');
+initToggle('Veiled Fate', 'Celestial');
+initToggle('Veiled Fate', 'Celestial Info');
 
 const vfSvgObject = document.getElementById('vf-svg-object') as HTMLObjectElement;
 vfSvgObject.addEventListener('load', () => {
@@ -152,6 +154,53 @@ function animateToggle(arg: AnimateToggleArg) {
         case 'Veiled Fate': {
           switch (arg.toggle) {
             case 'Celestial': {
+              const celestial = values[arg.data[0]];
+              const winCondition = arg.data[0] ? `assets/veiled-fate/${celestial}_WC.png` : '';
+              const gameplay = arg.data[0] ? `assets/veiled-fate/${celestial}_GP.png` : '';
+              const cardDiv = document.getElementById('vf-celestial') as HTMLDivElement;
+              reveal(cardDiv, 1000, 'reverse');
+              wait(1000).then(() => {
+                const wcCard = document.getElementById('vf-celestial-wc') as HTMLImageElement;
+                const gpCard = document.getElementById('vf-celestial-gp') as HTMLImageElement;
+                let wcLoaded = false;
+                let gpLoaded = false;
+                wcCard.onload = () => {
+                  wcLoaded = true;
+                  if (gpLoaded) reveal(cardDiv, 1000);
+                  wcCard.onload = null;
+                };
+                gpCard.onload = () => {
+                  gpLoaded = true;
+                  if (wcLoaded) reveal(cardDiv, 1000);
+                  gpCard.onload = null;
+                };
+                wcCard.src = winCondition;
+                gpCard.src = gameplay;
+              });
+              break;
+            }
+            case 'Celestial Info': {
+              const infoType = values[arg.data[0]];
+              const newCardImg = document.getElementById(
+                `vf-celestial-${infoType === 'Gameplay' ? 'gp' : 'wc'}`,
+              ) as HTMLImageElement;
+              const oldCardImg = document.getElementById(
+                `vf-celestial-${infoType === 'Gameplay' ? 'wc' : 'gp'}`,
+              ) as HTMLImageElement;
+              const parent = document.getElementById('vf-celestial-card') as HTMLDivElement;
+              newCardImg.animate([{ opacity: '0' }], { duration: 1, fill: 'forwards' });
+              wait(100)
+                .then(() => {
+                  newCardImg.style.position = 'relative';
+                  oldCardImg.style.position = 'absolute';
+                  parent.removeChild(newCardImg);
+                  parent.appendChild(newCardImg);
+                  newCardImg.animate([{ opacity: '1' }], { duration: 1000, fill: 'forwards' });
+                  return wait(1100);
+                })
+                .then(() => {
+                  oldCardImg.animate([{ opacity: '0' }], { duration: 1, fill: 'forwards' });
+                });
               break;
             }
             case 'Age': {
@@ -228,7 +277,6 @@ function animateArray(arg: AnimateArrayArg) {
               if (hadriaDamageCracks.element) reveal(hadriaDamageCracks.element, 1000, 'reverse');
               return;
             }
-            console.log('hey');
             reveal(marker);
             if (hadriaDamageCracks.element) reveal(hadriaDamageCracks.element);
 
@@ -247,8 +295,8 @@ function animateArray(arg: AnimateArrayArg) {
             if (hadria.old === undefined || hadria.old === newVal) {
               if (hadriaDamageCracks.element) {
                 hadriaDamageCracks.element.style.clipPath = `inset(0 0 0 ${cracksClip}%)`;
-								hadriaDamageCracks.old = cracksClip;
-								hadriaDamageCracks.val = cracksClip;
+                hadriaDamageCracks.old = cracksClip;
+                hadriaDamageCracks.val = cracksClip;
               }
               hadria.marker.transform.baseVal[0].setTranslate(newVal, 0);
               hadria.old = hadria.val === undefined ? newVal : hadria.val;
@@ -272,7 +320,6 @@ function animateArray(arg: AnimateArrayArg) {
             anim.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
             hadria.marker.appendChild(anim);
             if (hadriaDamageCracks.element) {
-              console.log([{ 'clip-path': `inset(0 0 0 ${cracksClip}%)` }]);
               hadriaDamageCracks.element.animate(
                 [
                   { clipPath: `inset(0 0 0 ${oldClip !== undefined ? oldClip : cracksClip}%)`, offset: 0 },

@@ -140,7 +140,7 @@ const gameDefs: GameDefs = {
     toggles: {
       Celestial: {
         type: 'single',
-        values: ['none', 'Arbiter', 'Eredan', 'Tormentor', 'Mother To All', 'Steward', 'Sorcerer', 'The Prophet'],
+        values: ['none', 'Arbiter', 'Eredan', 'Tormentor', 'Mother To All', 'Steward', 'The Sorcerer', 'The Prophet'],
       },
 			'Celestial Info': {
 				type: 'single',
