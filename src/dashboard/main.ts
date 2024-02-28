@@ -26,6 +26,18 @@ const gameSelectorDiv = document.getElementById('game-selector') as HTMLDivEleme
 const arrayHolder = document.getElementById('array-holder') as HTMLDivElement;
 const toggleHolder = document.getElementById('toggle-holder') as HTMLDivElement;
 const resetButton = document.getElementById('reset') as HTMLButtonElement;
+const endButton = document.getElementById('end') as HTMLButtonElement;
+endButton.onclick = () => {
+	if (confirm('Really end the game?')) {
+    NodeCG.waitForReplicants(activeGameRep)
+      .then(() => {
+        return nodecg.sendMessage('endGame', activeGameRep.value);
+      })
+      .catch((err) => {
+        nodecg.log.error(err);
+      });
+  }
+}
 resetButton.onclick = () => {
   if (confirm('Really reset the game?')) {
     NodeCG.waitForReplicants(activeGameRep)

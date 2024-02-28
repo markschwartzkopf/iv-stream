@@ -14,6 +14,8 @@ import {
   GamesData,
 } from '../extension/game-data';
 
+let resetFuncs: (() => void)[] = [];
+
 const demigodMarkers: {
   [k: string]: {
     marker: SVGGraphicsElement | null;
@@ -110,40 +112,137 @@ function initToggle(gameName: string, toggleName: string) {
   });
 }
 
-initToggle('Veiled Fate', 'Age');
-initToggle('Veiled Fate', 'Age Card Side');
-initToggle('Veiled Fate', 'Celestial');
-initToggle('Veiled Fate', 'Celestial Info');
+function inits() {
+  initToggle('Veiled Fate', 'Age');
+  initToggle('Veiled Fate', 'Age Card Side');
+  initToggle('Veiled Fate', 'Celestial');
+  initToggle('Veiled Fate', 'Celestial Info');
 
-const vfSvgObject = document.getElementById('vf-svg-object') as HTMLObjectElement;
-vfSvgObject.addEventListener('load', () => {
-  setTimeout(() => {
-    const svgDoc = vfSvgObject.contentDocument;
-    if (svgDoc) {
-      Object.keys(demigodMarkers).forEach((key) => {
-        const markerId = key.toLowerCase() + '-marker';
-        const marker = svgDoc.getElementById(markerId);
-        if (marker) demigodMarkers[key].marker = marker as any as SVGGraphicsElement;
-      });
-      hadriaDamageCracks.element = svgDoc.getElementById('hadria-danger') as any as SVGGraphicsElement;
-      if (hadriaDamageCracks.element) {
-        hadriaDamageCracks.element.style.clipPath = 'inset(0 0 0 8.33%)';
-        hadriaDamageCracks.old === 8.33;
-        hadriaDamageCracks.val;
-      }
-      initArray('Veiled Fate', 'Demigods');
-      initArray('Veiled Fate', 'Hadria');
-    } else nodecg.log.error(`Can't load Veiled Fate .svg`);
-  }, 500);
-});
-const vfSvgData = vfSvgObject.data;
-vfSvgObject.data = '';
-vfSvgObject.data = vfSvgData;
+  const vfSvgObject = document.getElementById('vf-svg-object') as HTMLObjectElement;
+  vfSvgObject.addEventListener('load', () => {
+    setTimeout(() => {
+      const svgDoc = vfSvgObject.contentDocument;
+      if (svgDoc) {
+        Object.keys(demigodMarkers).forEach((key) => {
+          const markerId = key.toLowerCase() + '-marker';
+          const marker = svgDoc.getElementById(markerId);
+          if (marker) demigodMarkers[key].marker = marker as any as SVGGraphicsElement;
+        });
+        hadriaDamageCracks.element = svgDoc.getElementById('hadria-danger') as any as SVGGraphicsElement;
+        if (hadriaDamageCracks.element) {
+          hadriaDamageCracks.element.style.clipPath = 'inset(0 0 0 8.33%)';
+          hadriaDamageCracks.old === 8.33;
+          hadriaDamageCracks.val;
+        }
+        initArray('Veiled Fate', 'Demigods');
+        initArray('Veiled Fate', 'Hadria');
+      } else nodecg.log.error(`Can't load Veiled Fate .svg`);
+    }, 500);
+  });
+  const vfSvgData = vfSvgObject.data;
+  vfSvgObject.data = '';
+  vfSvgObject.data = vfSvgData;
+}
+
+inits();
 
 nodecg.listenFor('animate', (arg) => {
   if (arg.array) {
     animateArray(arg);
   } else animateToggle(arg);
+});
+
+nodecg.listenFor('resetGame', () => {
+  for (let i = 0; i < resetFuncs.length; i++) {
+    resetFuncs[i]();
+  }
+  resetFuncs = [];
+  inits();
+});
+
+nodecg.listenFor('endGame', (arg) => {
+  switch (arg) {
+    case 'Veiled Fate': {
+      NodeCG.waitForReplicants(gamesdataRep, gamesRep).then(() => {
+        if (gamesdataRep.value && gamesdataRep.value['Veiled Fate'] && gamesRep.value) {
+          const vf = gamesdataRep.value['Veiled Fate'];
+          if (vf.arrays.Hadria.length) {
+            const hadriaRenown = vf.arrays.Hadria[0].renown.val;
+            const demigods = vf.arrays.Demigods;
+            for (let i = 0; i < demigods.length; i++) {
+              const demigod = demigods[i];
+              const demigodImagedef = gamesRep.value[arg].arrays.Demigods.fields.image;
+              if (demigod.renown.val > hadriaRenown && demigodImagedef.type === 'image') {
+                const demigodName = demigodImagedef.values[+demigod.image.val].name;
+                const demigodLocal = demigodMarkers[demigodName];
+                const marker = demigodLocal.marker;
+                if (marker) {
+                  const animUp = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
+                  animUp.setAttributeNS(null, 'attributeName', 'transform');
+                  animUp.setAttributeNS(null, 'type', 'translate');
+                  animUp.setAttributeNS(null, 'values', `-27 13; -27 -23`);
+                  animUp.setAttributeNS(null, 'dur', `1000ms`);
+                  animUp.setAttributeNS(null, 'begin', 'indefinite');
+                  animUp.setAttributeNS(null, 'fill', 'freeze');
+                  animUp.setAttributeNS(null, 'calcMode', 'spline');
+                  animUp.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
+                  const animGrab = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                  animGrab.setAttributeNS(null, 'attributeName', 'd');
+                  animGrab.setAttributeNS(
+                    null,
+                    'values',
+                    `M 16.4,54.1l 5.5,-8.8c 0.3,-0.7 3.3,-3.6 4.9,-4.3c 1.6,-0.7 7.5,-0.7 7.9,-0.7c 0.4,0 2.3,0.4 3.3,-1.2c 0.4,-0.5 4.9,-5.2 5.4,-6.7c 0.3,-1 -0.7,-3 -1.7,-4.8c -0.2,-0.5 -0.3,-1.1 -0.4,-1.9c 1.2,-2.9 6.2,-7.6 6.3,-9.3c 0.1,-1.7 -1.7,-7.1 -2.9,-7.8c -0.9,-0.3 -5.4,-2.7 -7.1,-0.3c 3.7,-0.2 4.8,2.3 4.8,2.3c 0,0 1,4.3 1.2,5.6c -3.1,2.1 -5.7,6.6 -6.2,7.3c -2,0.6 -7.7,6.1 -8.7,6.3c -1,0.2 -6.3,1.4 -6.3,1.4c -3.1,-0.8 -9.2,-3.6 -10.2,-4.2c -0.3,-0.5 -0.6,-3.9 -1.5,-6c -0.4,-0.8 2,-3.9 4.9,-6.4c -3.9,-0.2 -9.2,3.2 -8.3,6.9c 0.4,1.7 1.7,9.4 1.7,9.4c 0,0 5.1,1.2 5.9,1.9c 0.8,0.7 1.7,2.3 1.6,2.9l -12.2,18.4z M 39.5,29.8c 3,-1.3 8.8,-2.5 10,-3.7c 1.2,-1.2 3.6,-6.3 3.2,-7.7c -0.5,-0.8 -2,-5.5 -4.9,-5c 2.9,2.5 1.9,5 1.9,5c 0,0 -2.3,3.8 -3,4.9c -1.8,-0.3 -3.9,0.2 -5.6,0.9z M 39.4,35.7c 3.2,-0.1 9.2,0.8 10.7,0.2c 1.6,-0.7 4.8,-3.4 5,-4.8c -0.2,-0.9 0.1,-5.9 -2.8,-6.5c 1.7,3.4 -0.1,5.4 -0.1,5.4c 0,0 -2.7,1.5 -3.8,2.2c -1.6,-1 -3.7,-1.2 -5.5,-1.1z;
+									M 16.4,54.1l 5.5,-9c 0.4,-0.7 3.3,-3.6 4.9,-4.3c 1.6,-0.7 7.5,-0.7 7.9,-0.7c 0.4,0 2.4,0.5 3.3,-1.2c 0.4,-0.5 5,-5.2 5.4,-6.7c 0.3,-1 -0.7,-3 -1.7,-4.8c 0,-0.4 -0.1,-0.8 -0.2,-1.2c 1.1,-2.9 2.3,-9.8 2,-11c -0.3,-1.7 -4.9,-7.1 -6.3,-6.6c -0.7,0.5 -6,2.6 -5.9,5.5c 2.1,-3.1 5.4,-2.1 5.4,-2.1c 0,0 2.4,2.7 2.9,3.9c -2.4,2.1 -3,6.3 -3.5,6.9c -2,0.6 -7.2,6.8 -7.3,6.8c -1,0.2 -4.3,0.1 -4.3,0.1c -3.1,-0.8 -7.9,-5.2 -8.3,-6c -0.1,-0.6 0.8,-3.8 0.7,-6.1c 0,-0.9 3.7,-3.1 7.2,-4.4c -3.6,-1.6 -10.3,-0.1 -10.4,3.6c -0.2,1.7 -1.7,9.4 -1.7,9.4c 0,0 4.6,4 5.4,4.7c 0.8,0.7 -0.3,3.5 -0.9,4.6l -12.3,18.6z M42.0,29.8c 0,-3 -1.4,-9.2 -3.5,-9.9c -3.6,-1.1 -8.5,-2.3 -10.4,-2c -3.1,0.9 -5.4,2.8 -8.3,5.8c 1.7,-0.7 8.6,-3.4 9.4,-2.9c 2.2,1.3 5.1,1.8 6.3,2.4c -0.3,1 0.6,5.6 0.6,5.6z M 43.6,32.3c -1.0,-2.8 -2.9,-9.2 -5,-9.2c -3.7,-0.5 -8.7,-1 -10.6,-0.4c -2.9,1.4 -3.5,3.7 -5.8,7c 1.5,-1 6.5,-4.7 7.4,-4.4c 2.3,0.9 5.3,1 6.6,1.4c -0.2,1 1.5,5.4 1.5,5.4z`,
+                  );
+                  animGrab.setAttributeNS(null, 'dur', `1000ms`);
+                  animGrab.setAttributeNS(null, 'begin', 'indefinite');
+                  animGrab.setAttributeNS(null, 'fill', 'freeze');
+                  animGrab.setAttributeNS(null, 'calcMode', 'spline');
+                  animGrab.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
+                  const animDown = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
+                  animDown.setAttributeNS(null, 'attributeName', 'transform');
+                  animDown.setAttributeNS(null, 'type', 'translate');
+                  animDown.setAttributeNS(null, 'values', `0 0; 0 40`);
+                  animDown.setAttributeNS(null, 'dur', `1000ms`);
+                  animDown.setAttributeNS(null, 'begin', 'indefinite');
+                  animDown.setAttributeNS(null, 'fill', 'freeze');
+                  animDown.setAttributeNS(null, 'calcMode', 'spline');
+                  animDown.setAttributeNS(null, 'keySplines', '0.5 0 0.5 1');
+                  const hexAndClaw = marker.children[marker.children.length - 1] as SVGGElement;
+                  const claw = hexAndClaw.children[hexAndClaw.children.length - 1] as SVGPathElement;
+                  (animUp as any).onend = () => {
+                    claw.appendChild(animGrab);
+                    resetFuncs.push(() => {
+                      claw.removeChild(animGrab);
+                    });
+                    animGrab.beginElement();
+                  };
+                  (animGrab as any).onend = () => {
+                    hexAndClaw.appendChild(animDown);
+                    resetFuncs.push(() => {
+                      hexAndClaw.removeChild(animDown);
+                    });
+                    animDown.beginElement();
+                  };
+                  claw.appendChild(animUp);
+                  resetFuncs.push(() => {
+                    claw.removeChild(animUp);
+                  });
+                  animUp.beginElement();
+                }
+              }
+            }
+          }
+        }
+      });
+
+      break;
+    }
+    default: {
+      nodecg.log.error(`Code endGame for game "${arg}"`);
+      break;
+    }
+  }
 });
 
 function animateToggle(arg: AnimateToggleArg) {
